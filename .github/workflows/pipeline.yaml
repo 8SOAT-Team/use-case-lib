@@ -27,9 +27,12 @@ jobs:
         run: dotnet build ./src/UseCase.sln --configuration Release
 
       - name: Pack NuGet package
-        run: dotnet pack ./src/UseCase.sln --configuration Release
+        run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
+
+      - name: List contents of release directory
+        run: ls -R ./lib/release
 
       - name: Push to NuGet.org
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push bin/Release/*.nupkg --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push lib/release/*.nupkg --source https://api.nuget.org/v3/index.json
