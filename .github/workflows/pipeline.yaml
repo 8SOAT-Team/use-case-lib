@@ -19,13 +19,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ./src/UseCase.sln
 
       - name: Build project
-        run: dotnet build --configuration Release
+        run: dotnet build ./src/UseCase.sln --configuration Release
 
       - name: Pack NuGet package
-        run: dotnet pack --configuration Release
+        run: dotnet pack ./src/UseCase.sln --configuration Release
 
       - name: Push to NuGet.org
         env:
