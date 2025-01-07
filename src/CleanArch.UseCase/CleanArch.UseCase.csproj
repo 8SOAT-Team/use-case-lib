@@ -10,14 +10,7 @@
 		<Description>Implements an lightweight engine to help use case from clean architecture implementation</Description>
 		<PackageTags>cleanarchitecture;usecase</PackageTags>
 		<RepositoryUrl>https://github.com/8SOAT-Team/use-case-lib</RepositoryUrl>
-		<PackageLicenseExpression>Apache2.0</PackageLicenseExpression>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.112">
-	    <PrivateAssets>all</PrivateAssets>
-	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  </PackageReference>
-	</ItemGroup>
 
 </Project>
