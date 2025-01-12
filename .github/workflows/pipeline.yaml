@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+    - main
 
 jobs:
   build:
@@ -26,13 +26,14 @@ jobs:
       - name: Build project
         run: dotnet build ./src/UseCase.sln --configuration Debug
 
-    test:
-      runs-on: ubuntu-latest
-      needs: build
+  test:
+    runs-on: ubuntu-latest
+    needs: build
 
+    steps:
       - name: Test
         run: dotnet test --configuration Release -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
-      
+
       - name: Create Test Coverage Badge
         uses: simon-k/dotnet-code-coverage-badge@v1.0.0
         id: create_coverage_badge
@@ -42,7 +43,7 @@ jobs:
           path: UseCase.Tests/TestResults/coverage.opencover.xml
           gist-filename: use-case-lib-coverage.json
           gist-id: 790517b6b21bfc7cd874a02927141ede
-          gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}       
+          gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}
 
       - name: Print code coverage
         run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
