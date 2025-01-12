@@ -26,11 +26,17 @@ jobs:
       - name: Build project
         run: dotnet build ./src/UseCase.sln --configuration Release
 
+  test:
+    runs-on: ubuntu-latest
+    needs: build
       - name: Test
         run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
       - name: Pack NuGet package
         run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
 
+  release:
+    runs-on: ubuntu-latest
+    needs: test
       - name: List contents of release directory
         run: ls -R ./lib/release
 

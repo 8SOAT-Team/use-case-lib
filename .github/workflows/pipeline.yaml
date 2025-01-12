@@ -24,10 +24,14 @@ jobs:
         run: dotnet restore ./src/UseCase.sln
 
       - name: Build project
-        run: dotnet build ./src/UseCase.sln --configuration Release
+        run: dotnet build ./src/UseCase.sln --configuration Debug
+
+    test:
+      runs-on: ubuntu-latest
+      needs: build
 
       - name: Test
-        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
+        run: dotnet test --configuration Release -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
       
       - name: Create Test Coverage Badge
         uses: simon-k/dotnet-code-coverage-badge@v1.0.0

@@ -26,5 +26,8 @@ jobs:
       - name: Build project
         run: dotnet build ./src/UseCase.sln --configuration Release
 
+  test:
+    runs-on: ubuntu-latest
+    needs: build
       - name: Test
         run: dotnet test ./src/UseCase.Tests/
