@@ -26,32 +26,25 @@ jobs:
       - name: Build project
         run: dotnet build ./src/UseCase.sln --configuration Release
 
-      - name: Run tests with coverage
-        run: dotnet test ./src/UseCase.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
-
-      - name: Install ReportGenerator
-        run: dotnet tool install --global dotnet-reportgenerator-globaltool
-
-      - name: Generate coverage report
-        run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:./coverage-report -reporttypes:Html
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v2
+      - name: Test
+        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal UseCase.Tests/
+      
+      - name: Create Test Coverage Badge
+        uses: simon-k/dotnet-code-coverage-badge@v1.0.0
+        id: create_coverage_badge
         with:
-          name: coverage-report
-          path: ./coverage-report
+          label: Unit Test Coverage
+          color: brightgreen
+          path: UseCase.Tests/TestResults/coverage.opencover.xml
+          gist-filename: use-case-lib-coverage.json
+          gist-id: 790517b6b21bfc7cd874a02927141ede
+          gist-auth-token: ${{ secrets.GIST_AUTH_TOKEN }}       
 
-      - name: Generate JaCoCo Badge
-        uses: cicirello/jacoco-badge-generator@v3
-        with:
-          jacoco-cov-file: ./coverage-report/coverage.cobertura.xml
-          badge-file: ./coverage-report/badge.svg
+      - name: Print code coverage
+        run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
 
-      - name: Upload Badge
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage-badge
-          path: ./coverage-report/badge.svg
+      - name: Print badge data
+        run: echo "Badge data ${{steps.test_step.outputs.badge}}"
 
       - name: Pack NuGet package
         run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
