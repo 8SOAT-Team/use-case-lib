@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
         run: dotnet build ./src/UseCase.sln --configuration Release
 
       - name: Test
-        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal UseCase.Tests/
+        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
       
       - name: Create Test Coverage Badge
         uses: simon-k/dotnet-code-coverage-badge@v1.0.0
@@ -45,14 +45,3 @@ jobs:
 
       - name: Print badge data
         run: echo "Badge data ${{steps.test_step.outputs.badge}}"
-
-      - name: Pack NuGet package
-        run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
-
-      - name: List contents of release directory
-        run: ls -R ./lib/release
-
-      - name: Push to NuGet.org
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push lib/release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY

@@ -1,0 +1,40 @@
+name: Publish NuGet package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ./src/UseCase.sln
+
+      - name: Build project
+        run: dotnet build ./src/UseCase.sln --configuration Release
+
+      - name: Test
+        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
+      - name: Pack NuGet package
+        run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
+
+      - name: List contents of release directory
+        run: ls -R ./lib/release
+
+      - name: Push to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push lib/release/*.nupkg --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY
