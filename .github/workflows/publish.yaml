@@ -6,17 +6,17 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
@@ -25,40 +25,12 @@ jobs:
 
       - name: Build project
         run: dotnet build ./src/UseCase.sln --configuration Release
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: ./src/UseCase/bin/Release/
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: ./src/UseCase/bin/Release/
 
       - name: Test
         run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
 
       - name: Pack NuGet package
         run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
-
-  release:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: ./src/UseCase/bin/Release/
 
       - name: List contents of release directory
         run: ls -R ./lib/release
