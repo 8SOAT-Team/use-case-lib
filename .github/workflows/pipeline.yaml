@@ -45,3 +45,13 @@ jobs:
 
       - name: Print badge data
         run: echo "Badge data ${{steps.test_step.outputs.badge}}"
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+      
+      - name: ReportGenerator
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.4.3
+        with:
+          reports: cobertura.xml
+          targetdir: coveragereport
+          reporttypes: Html_Dark;Badges
