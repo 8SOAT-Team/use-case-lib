@@ -27,7 +27,7 @@ jobs:
         run: dotnet build ./src/UseCase.sln --configuration Release
 
       - name: Test
-        run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --no-build --verbosity normal ./src/UseCase.Tests/
+        run: dotnet test ./src/UseCase.Tests/ -c Release --no-build --no-restore 
 
       - name: Pack NuGet package
         run: dotnet pack ./src/UseCase.sln --configuration Release -o ./lib/release
