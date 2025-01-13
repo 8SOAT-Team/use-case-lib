@@ -44,7 +44,7 @@ jobs:
         run: echo "Code coverage percentage ${{steps.create_coverage_badge.outputs.percentage}}%"
 
       - name: Print badge data
-        run: echo "Badge data ${{steps.test_step.outputs.badge}}"
+        run: echo "Badge data ${{steps.create_coverage_badge.outputs.badge}}"
 
       - name: Install ReportGenerator
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -55,3 +55,9 @@ jobs:
           reports: ./src/UseCase.Tests/TestResults/coverage.opencover.xml
           targetdir: coveragereport
           reporttypes: Html_Dark;Badges
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: ./coveragereport
