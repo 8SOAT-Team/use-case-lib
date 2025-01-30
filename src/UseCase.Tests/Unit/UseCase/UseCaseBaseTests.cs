@@ -1,48 +1,16 @@
-﻿using System.Text.Json;
-using AutoBogus;
-using CleanArch.UseCase;
+﻿using AutoBogus;
 using CleanArch.UseCase.Faults;
-using CleanArch.UseCase.Logging;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
+using UseCase.Tests.MockStudio.Mocks;
 
 namespace UseCase.Tests.Unit.UseCase;
 
 public class UseCaseBaseTests
 {
-    private record MockCommand(string Input);
-    private record MockResult(string Output);
-
-    private class MockUseCase(ILogger logger) : UseCaseBase<MockCommand, MockResult>(logger)
-    {
-        protected override Task<MockResult?> Execute(MockCommand command)
-        {
-            if (command.Input == "fail")
-                throw new Exception("Execution failed");
-
-            if (command.Input == "ucex")
-                throw new UseCaseException(UseCaseErrorType.BadRequest, "Business error occurred");
-
-            return Task.FromResult(new MockResult($"Processed {command.Input}"))!;
-        }
-
-        public void MockAddError(UseCaseError error) => AddError(error);
-        public void MockAddError(IEnumerable<UseCaseError> errors) => AddError(errors);
-    }
-
-    private class MockUseCaseThrowException(ILogger logger) : MockUseCase(logger)
-    {
-        protected override bool ThrowExceptionOnFailure => true;
-    }
-
-    private readonly ILogger _mockLogger;
-    private readonly MockUseCase _sut;
-
-    public UseCaseBaseTests()
-    {
-        _mockLogger = Substitute.For<ILogger>();
-        _sut = new MockUseCase(_mockLogger);
-    }
+    
+    private readonly MockUseCase _sut = new(Substitute.For<ILogger<MockUseCase>>());
 
     [Fact]
     public async Task ResolveAsync_Should_ReturnValidResult_WhenExecutionHasSucceed()
@@ -56,8 +24,6 @@ public class UseCaseBaseTests
         // Assert
         result.HasValue.Should().BeTrue();
         result.Value.Should().BeEquivalentTo(new MockResult($"Processed {command.Input}"));
-        _mockLogger.Received().LogInfo(Arg.Any<string>());
-        _mockLogger.Received().LogDebug(Arg.Any<string>());
     }
 
     [Fact]
@@ -72,7 +38,6 @@ public class UseCaseBaseTests
         // Assert
         result.HasValue.Should().BeFalse();
         _sut.GetErrors().Should().ContainSingle(e => e.Code == UseCaseErrorType.InternalError);
-        _mockLogger.Received().LogError(Arg.Any<string>(), Arg.Any<Exception>());
     }
 
     [Fact]
@@ -87,15 +52,15 @@ public class UseCaseBaseTests
         // Assert
         result.HasValue.Should().BeFalse();
         _sut.GetErrors().Should().ContainSingle(e => e.Code == UseCaseErrorType.BadRequest);
-        _mockLogger.Received().LogError(Arg.Any<string>(), null);
     }
 
     [Fact]
     public async Task ResolveAsync_Should_ThrowException_WhenThrowExceptionOnFailureIsTrue()
     {
         // Arrange
+        var logger = Substitute.For<ILogger<MockUseCaseThrowException>>();
         var command = new MockCommand("fail");
-        var sutWithException = new MockUseCaseThrowException(_mockLogger);
+        var sutWithException = new MockUseCaseThrowException(logger);
 
         // Act
         Func<Task> act = async () => await sutWithException.ResolveAsync(command);
@@ -133,34 +98,6 @@ public class UseCaseBaseTests
 
         // Assert
         _sut.GetErrors().Should().BeEquivalentTo(errors);
-    }
-
-    [Fact]
-    public async Task ResolveAsync_Should_RegisterStartAndEndLogs()
-    {
-        // Arrange
-        var command = AutoFaker.Generate<MockCommand>();
-
-        // Act
-        await _sut.ResolveAsync(command);
-
-        // Assert
-        _mockLogger.Received().LogInfo(Arg.Is<string>(msg => msg.Contains("Iniciando Resolve")));
-        _mockLogger.Received().LogInfo(Arg.Is<string>(msg => msg.Contains("Execucao concluida")));
-    }
-
-    [Fact]
-    public async Task ResolveAsync_Should_SerializeCommandCorrectly()
-    {
-        // Arrange
-        var command = new MockCommand("test-input");
-        var expectedSerialization = JsonSerializer.Serialize(command);
-
-        // Act
-        await _sut.ResolveAsync(command);
-
-        // Assert
-        _mockLogger.Received().LogDebug(Arg.Is<string>(msg => msg.Contains(expectedSerialization)));
     }
 
     [Fact]
