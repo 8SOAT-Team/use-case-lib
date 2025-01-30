@@ -1,21 +1,16 @@
 ﻿using CleanArch.UseCase.Faults;
-using CleanArch.UseCase.Logging;
 using CleanArch.UseCase.Options;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace CleanArch.UseCase;
 
-public abstract class UseCaseBase<TCommand, TOut>(ILogger logger) : IUseCase<TCommand, TOut> where TOut : class
+public abstract class UseCaseBase<TLogContext, TCommand, TOut>(ILogger<TLogContext> logger)
+    : IUseCase<TCommand, TOut> where TOut : class
 {
-    protected readonly ILogger _logger = logger;
+    protected readonly ILogger Logger = logger;
     private readonly List<UseCaseError> _useCaseError = [];
     protected virtual bool ThrowExceptionOnFailure => false;
-
-    private static readonly JsonSerializerOptions jsonSerializerOptions = new()
-    {
-        ReferenceHandler = ReferenceHandler.IgnoreCycles,
-    };
 
     public bool IsFailure => _useCaseError.Count != 0;
 
@@ -24,34 +19,34 @@ public abstract class UseCaseBase<TCommand, TOut>(ILogger logger) : IUseCase<TCo
 
     public virtual async Task<Any<TOut>> ResolveAsync(TCommand command)
     {
-        _logger.LogInfo($"Iniciando Resolve {typeof(TCommand)}");
-        _logger.LogDebug($"Comando recebido: {JsonSerializer.Serialize(command, jsonSerializerOptions)}");
+        Logger.LogDebug("Comando recebido: {comando}", JsonSerializer.Serialize(command));
 
         try
         {
-            _logger.LogDebug("Iniciando execucao do comando");
+            Logger.LogDebug("Iniciando execucao do comando");
 
             var result = await Execute(command);
 
-            _logger.LogInfo($"Execucao concluida {typeof(TCommand)}");
-            _logger.LogDebug($"Resultado {(result is null ? null : JsonSerializer.Serialize(result, jsonSerializerOptions))}");
+            Logger.LogDebug("Resultado {resultado}",
+                result is null ? null : JsonSerializer.Serialize(result));
 
             return result.ToAny();
         }
         catch (UseCaseException ucex)
         {
             AddError(new UseCaseError(ucex.Code, ucex.Message));
-            _logger.LogError(ucex.Message, ucex.InnerException);
+            Logger.LogError("Erro: {exceptionMessage} innerException: {innerException}", ucex.Message,
+                ucex.InnerException);
         }
         catch (Exception ex)
         {
+            AddError(new UseCaseError(UseCaseErrorType.InternalError, ex.Message));
+            Logger.LogError("Erro: {exceptionMessage} innerException: {innerException}", ex.Message, ex.InnerException);
+            
             if (ThrowExceptionOnFailure)
             {
                 throw;
             }
-
-            AddError(new UseCaseError(UseCaseErrorType.InternalError, ex.Message));
-            _logger.LogError(ex.Message, ex.InnerException);
         }
 
         return Any<TOut>.Empty;
@@ -59,5 +54,5 @@ public abstract class UseCaseBase<TCommand, TOut>(ILogger logger) : IUseCase<TCo
 
     public IReadOnlyCollection<UseCaseError> GetErrors() => _useCaseError;
 
-    protected abstract Task<TOut?> Execute(TCommand command);
+    protected abstract Task<TOut?>  Execute(TCommand command);
 }
