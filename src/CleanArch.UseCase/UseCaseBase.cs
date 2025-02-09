@@ -1,6 +1,7 @@
 ﻿using CleanArch.UseCase.Faults;
 using CleanArch.UseCase.Options;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace CleanArch.UseCase;
@@ -19,7 +20,7 @@ public abstract class UseCaseBase<TLogContext, TCommand, TOut>(ILogger<TLogConte
 
     public virtual async Task<Any<TOut>> ResolveAsync(TCommand command)
     {
-        Logger.LogDebug("Comando recebido: {comando}", JsonSerializer.Serialize(command));
+        Logger.LogDebug("Comando recebido: {comando}", Serialize(command));
 
         try
         {
@@ -28,7 +29,7 @@ public abstract class UseCaseBase<TLogContext, TCommand, TOut>(ILogger<TLogConte
             var result = await Execute(command);
 
             Logger.LogDebug("Resultado {resultado}",
-                result is null ? null : JsonSerializer.Serialize(result));
+                result is null ? null : Serialize(result));
 
             return result.ToAny();
         }
@@ -42,7 +43,7 @@ public abstract class UseCaseBase<TLogContext, TCommand, TOut>(ILogger<TLogConte
         {
             AddError(new UseCaseError(UseCaseErrorType.InternalError, ex.Message));
             Logger.LogError("Erro: {exceptionMessage} innerException: {innerException}", ex.Message, ex.InnerException);
-            
+
             if (ThrowExceptionOnFailure)
             {
                 throw;
@@ -54,5 +55,7 @@ public abstract class UseCaseBase<TLogContext, TCommand, TOut>(ILogger<TLogConte
 
     public IReadOnlyCollection<UseCaseError> GetErrors() => _useCaseError;
 
-    protected abstract Task<TOut?>  Execute(TCommand command);
+    protected abstract Task<TOut?> Execute(TCommand command);
+
+    private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, Serialization.JsonSerializerOptions);
 }
